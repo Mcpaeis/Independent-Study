@@ -19,11 +19,11 @@ library(patchwork)
 
 ```{r}
 # load data: PBMC - Peripheral Blood Mononuclear Cell, both control and stimulated set
-ctrl_dge <- readRDS("/Users/sixtusdakurah/Desktop/ctrl_dge.rds") # original PBMC data
-stim_dge <- readRDS("/Users/sixtusdakurah/Desktop/stim_dge.rds") # original PBMC data
+ctrl_dge <- RDS_from_web("http://sixtusdakurah.com/projects/liger/ctrl_dge.rds") # original PBMC data
+stim_dge <- RDS_from_web("http://sixtusdakurah.com/projects/liger/stim_dge.rds") # original PBMC data
 
-ctrl_dge_1 <- readRDS("/Users/sixtusdakurah/Desktop/ctrl_dge_1.rds") # dense representation from NeuMF
-stim_dge_1 <- readRDS("/Users/sixtusdakurah/Desktop/stim_dge_1.rds") # dense representation from NeuMF
+ctrl_dge_1 <- RDS_from_web("http://sixtusdakurah.com/projects/liger/ctrl_dge_1.rds") # dense representation from NeuMF
+stim_dge_1 <- RDS_from_web("http://sixtusdakurah.com/projects/liger/stim_dge_1.rds") # dense representation from NeuMF
 ```
 
 
