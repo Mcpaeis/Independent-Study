@@ -1,0 +1,119 @@
+---
+title: "Data Processor"
+author: "Sixtus Dakurah"
+date: "5/15/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls()) # clear environment
+knitr::opts_chunk$set(echo = TRUE)
+# load packages
+library(liger)
+library(Matrix)
+library(patchwork)
+```
+
+## This is for the PBMC data
+
+```{r}
+RDS_from_web <- function(url) {
+
+  tempFile_location<- tempfile()
+  download.file(url, tempFile_location)
+  b <- readRDS(tempFile_location)
+  file.remove(tempFile_location)
+  b
+}
+
+# load data: PBMC - Peripheral Blood Mononuclear Cell, both control and stimulated set
+
+ctrl_dge <- RDS_from_web("https://sixtusdakurah.com/projects/liger/PBMC_control.RDS")
+stim_dge <- RDS_from_web("https://sixtusdakurah.com/projects/liger/PBMC_interferon-stimulated.RDS")
+```
+
+# Option One: Get the sparse representation of the data.
+
+```{r}
+# get that of the control
+x.ctrl = ctrl_dge@x
+i.ctrl = ctrl_dge@i
+j.ctrl = ctrl_dge@j
+dim.ctrl = ctrl_dge@Dim
+ctrl.cells = ctrl_dge@Dimnames[[2]]
+ctrl.genes = ctrl_dge@Dimnames[[1]]
+# get that of the stimulated
+x.stim = stim_dge@x
+i.stim  = stim_dge@i
+j.stim  = stim_dge@j
+dim.stim  = stim_dge@Dim
+stim.cells = stim_dge@Dimnames[[2]]
+stim.genes = stim_dge@Dimnames[[1]]
+# construct dataframes
+ctrl.df  = data.frame(
+  i=i.ctrl+1, # ctrl_dge@i is 0-based, not 1-based like everything else in R
+  j=j.ctrl+1, # ctrl_dge@j is 0-based, not 1-based like everything else in R
+  x=x.ctrl
+  )
+stim.df  = data.frame(
+  i=i.stim+1, # stim_dge@i is 0-based, not 1-based like everything else in R
+  j=j.stim+1, # stim_dge@j is 0-based, not 1-based like everything else in R
+  x=x.stim
+  )
+# convert to column sparse matrices
+ctrl.sparse <- sparseMatrix(i = ctrl.df$i, j = ctrl.df$j, x = ctrl.df$x, dims = dim.ctrl)
+stim.sparse <- sparseMatrix(i = stim.df$i, j = stim.df$j, x = stim.df$x, dims = dim.stim)
+```
+
+## This does not appear to follow the papers expression matrix construction. But the end results do agree.
+
+```{r}
+dim(ctrl.sparse) # 35635 cells  3000 genes
+dim(stim.sparse) # 35635 cells  3000 genes
+```
+
+```{r}
+# write to dataframes
+ctrl.sparse.df <- as.data.frame(as.matrix(ctrl.sparse), row.names = ctrl.genes)
+colnames(ctrl.sparse.df) <- ctrl.cells
+stim.sparse.df <- as.data.frame(as.matrix(stim.sparse), row.names = stim.genes)
+colnames(stim.sparse.df) <- stim.cells
+```
+
+
+```{r}
+head(ctrl.sparse.df) # gene by cell
+head(stim.sparse.df) # gene by cell
+```
+
+
+```{r}
+# write files to csv files
+ctrl_sparse_file = "/Users/sixtusdakurah/Documents/GRAD SCHOOL/Research/Deep Learning/Liger/ctrl_sparse_df.csv"
+stim_sparse_file = "/Users/sixtusdakurah/Documents/GRAD SCHOOL/Research/Deep Learning/Liger/stim_sparse_df.csv"
+write.csv(ctrl.sparse.df, file=ctrl_sparse_file)
+write.csv(stim.sparse.df, file=stim_sparse_file)
+```
+
+
+# Option Two: Remove unobserved non-expressed genes by creating liger object
+
+```{r}
+# create the object, remove cells not expressing any genes, remove genes not been expressed
+liger.object <- createLiger(list(ctrl_sparse = (ctrl.sparse.df), stim_sparse = (stim.sparse.df)), make.sparse = F, remove.missing = T)
+# this returns the exact matrix representation used in one of the use case
+```
+
+
+```{r}
+# write the matrices to csv files
+ctrl_sparse_file_ = "/Users/sixtusdakurah/Documents/GRAD SCHOOL/Research/Deep Learning/Liger/ctrl_sparse_dfp.csv"
+stim_sparse_file_ = "/Users/sixtusdakurah/Documents/GRAD SCHOOL/Research/Deep Learning/Liger/stim_sparse_dfp.csv"
+write.csv( (liger.object@raw.data)[[1]], file=ctrl_sparse_file_)
+write.csv( (liger.object@raw.data)[[2]], file=stim_sparse_file_)
+```
+
+```{r}
+dim((liger.object@raw.data)[[1]])
+dim((liger.object@raw.data)[[2]])
+```
