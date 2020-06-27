@@ -18,6 +18,15 @@ library(patchwork)
 ## Load and Process Data
 
 ```{r}
+RDS_from_web <- function(url) {
+
+  tempFile_location<- tempfile()
+  download.file(url, tempFile_location)
+  b <- readRDS(tempFile_location)
+  file.remove(tempFile_location)
+  b
+}
+
 # load data: PBMC - Peripheral Blood Mononuclear Cell, both control and stimulated set
 ctrl_dge <- RDS_from_web("http://sixtusdakurah.com/projects/liger/ctrl_dge.rds") # original PBMC data
 stim_dge <- RDS_from_web("http://sixtusdakurah.com/projects/liger/stim_dge.rds") # original PBMC data
